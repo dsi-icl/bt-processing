@@ -21,7 +21,7 @@ html {
   line-height: 1.5;
   overflow: hidden; /* Prevents rubber-band scrolling of the whole "page" */
   color: var(--color);
-  background-color: #fff; /* To cover OSes with no default background color */
+  background-color: #171717; /* To cover OSes with no default background color */
 }
 
 body {
@@ -83,7 +83,7 @@ code, kbd {
   border-radius: 4px;
   padding: 1px 4px;
   white-space: nowrap;
-  color: hsl(0,0%,36%);
+  color: hsl(189, 100%, 80%);
   background-color: hsla(0,0%,60%,.15);
 }
 

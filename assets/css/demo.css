@@ -37,6 +37,7 @@
   background-color: transparent;
   transition: border-color .12s;
   outline: none;
+  cursor: pointer;
 }
 
 .demo-toggle-button:before,

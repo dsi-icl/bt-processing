@@ -30,6 +30,10 @@
   color: var(--color);
 }
 
+.section em {
+  color: var(--color-accent);
+}
+
 .section-wrapper {
   position: relative;
   max-width: 740px;
@@ -48,4 +52,20 @@
   height: 32px;
   vertical-align: middle;
   margin-right: .5em;
+}
+
+.section .function-button {
+  width: 170px;
+  height: 40px;
+  line-height: 40px;
+  color: white;
+  background-color: var(--color-accent);
+  font-size: 1.12em;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.section .function-button:active {
+  background-color: var(--color-accent-lighter);
 }

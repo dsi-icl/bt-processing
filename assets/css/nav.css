@@ -75,7 +75,7 @@
   color: inherit;
   border: none;
   background-color: transparent;
-  cursor: default;
+  cursor: pointer;
   outline: none;
 }
 .nav-button:hover,
@@ -88,9 +88,6 @@
 .nav-button.is-selected,
 .nav-button.is-selected em {
   color: #fff;
-}
-.nav-button.is-selected:focus {
-  opacity: .8;
 }
 
 .nav-button em {

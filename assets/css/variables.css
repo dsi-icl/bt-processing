@@ -2,13 +2,13 @@
 /* Custom Properties */
 
 :root {
-  --color:          hsl(0,0%,22%);
-  --color-subtle:   hsl(0,0%,44%);
-  --color-strong:   hsl(0,0%,11%);
-  --color-link:     hsl(0,0%,22%);
+  --color:          hsl(0, 0%, 92%);
+  --color-subtle:   hsl(0, 0%, 74%);
+  --color-strong:   hsl(183, 81%, 58%);
+  --color-link:     hsl(0, 100%, 67%);
 
-  --color-border:   hsl(0,0%,88%);
-  --color-bg:       hsl(0,0%,96%);
+  --color-border:   hsl(0, 0%, 19%);
+  --color-bg:       rgb(35, 35, 35);
 
   --color-accent:   black; /* Fallback */
 }
@@ -16,9 +16,5 @@
 
 /* Category Colors */
 
-.u-category-windows       { --color-accent: hsl(116, 30%, 36%); }
-.u-category-menu          { --color-accent: hsl(194, 60%, 36%); }
-.u-category-native-ui     { --color-accent: hsl(222, 53%, 50%); }
-.u-category-communication { --color-accent: hsl(285, 47%, 46%); }
-.u-category-system        { --color-accent: hsl(330, 65%, 48%); }
-.u-category-media      { --color-accent: hsl( 36, 77%, 34%); }
+.u-category-menu          { --color-accent: hsl(166, 100%, 43%); --color-accent-lighter: hsl(166, 100%, 60%);}
+.u-category-communication { --color-accent: hsl(294, 100%, 50%); --color-accent-lighter: hsl(294, 100%, 67%); }
