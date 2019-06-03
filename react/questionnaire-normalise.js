@@ -1,5 +1,6 @@
 'use strict';
 const fs = require('fs');
+const { shell } = require('electron');
 
 class QuestionnaireConvert extends React.Component {
   constructor(props) {
@@ -41,6 +42,10 @@ class QuestionnaireConvert extends React.Component {
     event.stopPropagation();
   }
 
+  _onClickTryAgain = (e) => {
+      this.setState({ files: [], error: null, converting: false, downloadPath: '' });
+  }
+
   _removeFile = (path) => {
     const newList = this.state.files.filter(el => el.path !== path);
     this.setState({ files: newList });
@@ -60,24 +65,52 @@ class QuestionnaireConvert extends React.Component {
         const transformer = new QuestionnaireDataTransformer(inputStreams, outputStream);
         transformer.convert().then(() => {
             _that.setState({ converting: false, downloadPath: outputPath });
+            for (let each of inputStreams) {
+                each.close();
+            } 
+            outputStream.close();
         }).catch(e => {
-            _that.setState({ converting: false, error: JSON.stringify(e)});
+            _that.setState({ converting: false, error: e.toString()});
+            for (let each of inputStreams) {
+                each.close();
+            } 
+            outputStream.close();
         });
     })
+  }
+
+  _onClickConvertMore = () => {
+      this.setState({ files: [], error: null, converting: false, downloadPath: '' });
+  }
+
+  _onClickDownload = () => {
+    shell.showItemInFolder(this.state.downloadPath);
   }
 
   render() {
       return <div>
           <div
             style={{ background: '#414141', width: '100%', height: '200px', border: '1px solid', padding: '1rem' }}
-            onDrop={this._onDrop}
+            onDrop={this.state.downloadPath ? () => {} : this._onDrop}
             onDragOver={this._onDragOver}
             onDragEnter={this._onDragEnter}
           >
             {this.state.files.map(el => <OneFile file={el} key={el.path} removeFunc={this._removeFile}/>)}
           </div><br/>
-          <button className="function-button" onClick={this.state.converting ? () => {} : this._onClickConvert}>{ this.state.converting ? 'Loading' : 'Convert'}</button> 
-          { this.state.downloadPath ? <button className="function-button" onClick={this._onClickConvert}>Download</button> : null }
+          
+          {
+              this.state.error ?
+              <div> <p>ERROR! {this.state.error}</p> <button className='function-button' style={{ backgroundColor: 'hsl(341, 100%, 53%)'}} onClick={this._onClickTryAgain}>Try again</button> </div>
+              :
+              (this.state.downloadPath ?
+                    <div>
+                        <button className="function-button" style={{ backgroundColor: 'hsl(341, 100%, 53%)'}} onClick={this._onClickConvertMore}>Convert More</button>
+                        <button className="function-button" onClick={this._onClickDownload}>Download</button>
+                    </div>
+                  : <button className="function-button" onClick={this.state.converting ? () => {} : this._onClickConvert}>{ this.state.converting ? 'Loading' : 'Convert'}</button>
+              )
+          }
+ 
       </div>;
   }
 }

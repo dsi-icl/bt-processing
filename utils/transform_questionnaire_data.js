@@ -109,7 +109,8 @@ const SNAP_HEADERS = [
 ];
 
 class QuestionnaireDataTransformer {
-    constructor(inputStreams, outputStream) { // inputStreams: ReadableStream[], outputStream: WriteableStream
+    constructor(inputStreams, outputStream, summaryoutputStream) { // inputStreams: ReadableStream[], outputStream: WriteableStream
+        this.summaryoutputStream = summaryoutputStream;
         this.inputStreams = inputStreams;
         this.outputStream = outputStream;
         this.SNAP_HEADERS = SNAP_HEADERS;
@@ -135,6 +136,10 @@ class QuestionnaireDataTransformer {
 
     _convertOneStream(parser) {  // parser = this.inputStream[i]
         return new Promise((resolve, reject) => {
+            parser.on('error', err => { console.error(err); reject(err); });
+
+            parser.on('end', () => { parser.end(); });
+
             parser.on('readable', () => {
                 let line;
                 line = parser.read();
@@ -162,13 +167,11 @@ class QuestionnaireDataTransformer {
                         }
                         case this.AVAILABLE_SOURCES.SNAP:
                         {
-                            console.log(line);
                             this.outputStream.write(formatLine(this._transformSnapRecord(line)));
                             break;
                         }
                     }
                 }
-                // parser.end();
                 resolve();
             });
         });
