@@ -43,6 +43,9 @@
 
   <main class="content js-content"></main>
 
+  <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
   <script>
     require('./assets/imports')
     require('./assets/ex-links')
@@ -51,5 +54,10 @@
     require('./assets/code-blocks')
     require('./assets/normalize-shortcuts')
   </script>
+  <script type='text/babel' src='./utils/transform_questionnaire_data.js'></script>
+  <script type='text/babel' src='./react/questionnaire-normalise.js'></script>
+  
+
+  
 </body>
 </html>

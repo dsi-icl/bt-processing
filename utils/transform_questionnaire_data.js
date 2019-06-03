@@ -1,8 +1,112 @@
-const fs = require('fs');
 const parse = require('csv-parse');
 const moment = require('moment');
-const generate = require('csv-generate');
-const { SNAP_HEADERS, IMPERIAL_HEADERS } = require('./headers');
+// const { SNAP_HEADERS, IMPERIAL_HEADERS } = require('./headers');
+
+function formatLine(record) {
+    const keys = Object.keys(record);
+    let string = '';
+    for (let each of keys) {
+        string += `\t${record[each]}`;
+    }
+    return string.substring(1, string.length) + '\n';
+}
+
+const record = {
+    studyId: '',
+    siteId: '', 
+    dateCompleted: '',
+    episodesOfWheeze: '',
+    fever: '',
+    cold: '',
+    cough: '',
+    haveOtherSymtoms: '',
+    otherSymptoms: '',
+    blueInhaler: '',
+    brownInhaler: '', 
+    anticholinergicInhaler: '',
+    oralCorticosteroid: '',
+    antibiotics: '',
+    none: '',
+    haveOtherTreatments: '',
+    otherTreatment: '',
+    parents: '',
+    communityNurse: '',
+    GP: '',
+    emergencyDepartment: '',
+    outpatients: '',
+    paediatricAssessmentUnit: '',
+    paediatricWard: '',
+    paediatricICU: '',
+    other: '',
+    otherProvider: '',
+    infantStridor: '',
+    adultStertor: '',
+    adultWheeze: '',
+    infantWheeze: '',
+    unsure: '',
+    antiobiotics: ''
+};
+
+const IMPERIAL_HEADERS = [
+    'StartDate',
+    'EndDate',
+    'Progress',
+    'Duration (in seconds)',
+    'Finished',
+    'RecordedDate',
+    'Q1',
+    'Q2',
+    'Q2_4_TEXT',
+    'Q3',
+    'Q3_8_TEXT',
+    'Q4',
+    'Q4_9_TEXT',
+    'Q5',
+    'Q6',
+    'Study ID'
+];
+
+const SNAP_HEADERS = [
+    'ID.format',
+    'ID.completed',
+    'ID.date',
+    'ID.start',
+    'ID.endDate',
+    'ID.end',
+    'ID.time',
+    'ID.name',
+    'ID.site',
+    'Q1',
+    'Q2:1',
+    'Q2:2',
+    'Q2:3',
+    'Q2:4',
+    'Q2a',
+    'Q3:1',
+    'Q3:2',
+    'Q3:3',
+    'Q3:4',
+    'Q3:5',
+    'Q3:6',
+    'Q3:7',
+    'Q3a',
+    'Q4:1',
+    'Q4:2',
+    'Q4:3',
+    'Q4:4',
+    'Q4:5',
+    'Q4:6',
+    'Q4:7',
+    'Q4:8',
+    'Q4:9',
+    'Q4a',
+    'Q5:1',
+    'Q5:2',
+    'Q5:3',
+    'Q5:4',
+    'Q5:5',
+    'Q6'
+];
 
 class QuestionnaireDataTransformer {
     constructor(inputStreams, outputStream) { // inputStreams: ReadableStream[], outputStream: WriteableStream
@@ -22,6 +126,7 @@ class QuestionnaireDataTransformer {
     }
 
     async convert() {
+        this.outputStream.write(Object.keys(record).join('\t') + '\n');
         for (let i = 0; i < this.inputStreams.length; i++) {
             await this._convertOneStream(this.parseStreams[i]);
         }
@@ -33,80 +138,37 @@ class QuestionnaireDataTransformer {
             parser.on('readable', () => {
                 let line;
                 line = parser.read();
-                if (!line) throw new Error('Cannot read line.');
+                if (!line) reject('Cannot read line.');
 
                 /* check the source of the file */
                 let SOURCE;
                 const sourceIsImperial = this._checkWhichSourceRecordIsFrom(line, this.IMPERIAL_HEADERS); 
                 const sourceIsSnap = this._checkWhichSourceRecordIsFrom(line, this.SNAP_HEADERS); 
-                if ((sourceIsImperial && sourceIsSnap) || (!sourceIsImperial && !sourceIsSnap)) throw new Error('Cannot determine source.');
+                console.log(line, sourceIsImperial, sourceIsSnap);
+                if ((sourceIsImperial && sourceIsSnap) || (!sourceIsImperial && !sourceIsSnap)) reject('Cannot determine source.');
                 if (sourceIsImperial) SOURCE = this.AVAILABLE_SOURCES.IMPERIAL;
                 if (sourceIsSnap) SOURCE = this.AVAILABLE_SOURCES.SNAP;
             
                 /* getting rid of waste lines */
-                if (SOURCE = this.AVAILABLE_SOURCES.IMPERIAL) { parser.read(); parser.read(); }
+                if (SOURCE === this.AVAILABLE_SOURCES.IMPERIAL) { parser.read(); }
             
                 /* starting transformation */
                 while (line = parser.read()) {
                     switch (SOURCE) {
                         case this.AVAILABLE_SOURCES.IMPERIAL:
                         {
-                            /* collect analytic metadata */
-                            // recordedDates.push(line.RecordedDate);
-                            // recordedDurations.push(line['Duration (in seconds)']);
-
-                            console.log(this._transformImperialRecord(line));
+                            this.outputStream.write(formatLine(this._transformImperialRecord(line)));
                             break;
                         }
                         case this.AVAILABLE_SOURCES.SNAP:
-                            console.log('snap');
-                            const record = {
-                                studyId: '',
-                                dateCompleted: line.RecordedDate,
-                                episodesOfWheeze: '',
-                                fever: '',
-                                cold: '',
-                                cough: '',
-                                other_: '',
-                                otherSymptoms: '',
-                                blueInhaler: '',
-                                brownInhaler: '',
-                                anticholinergicInhaler: '',
-                                oralCorticosteroid: '',
-                                antibiotics: '',
-                                other__: '',
-                                none: '',
-                                otherTreatment: '',
-                                parents: '',
-                                communityNurse: '',
-                                GP: '',
-                                emergencyDepartment: '',
-                                outpatients: '',
-                                paediatricAssessmentUnit: '',
-                                paediatricWard: '',
-                                paediatricICU: '',
-                                other: '',
-                                otherProvider: '',
-                                infantStridor: '',
-                                adultStertor: '',
-                                adultWheeze: '',
-                                infantWheeze: '',
-                                unsure: '',
-                                antiobiotics: '',
-                            };
+                        {
+                            console.log(line);
+                            this.outputStream.write(formatLine(this._transformSnapRecord(line)));
                             break;
+                        }
                     }
                 }
-            });
-            
-            parser.on('end', () => {
-                // for (let i = 0; i < recordedDates.length; i++){
-                //     const date = moment(recordedDates[i], 'YYYY-MM-DD HH:mm');
-                //     const hour = date.hour();
-                //     const minute = date.minute();
-                //     recordedDates[i] = hour * 60 + minute;
-                // }
-                parser.end();
+                // parser.end();
                 resolve();
             });
         });
@@ -129,9 +191,9 @@ class QuestionnaireDataTransformer {
         const personnale = line.Q4;
         const soundclip = line.Q5;
         const record = {
-            studyId: line.StudyID,
-            siteId: line['Site ID'],
-            dateCompleted: line.RecordedDate,
+            studyId: line['Study ID'],
+            siteId: line['Study ID'].substring(0, 1),
+            dateCompleted: line.RecordedDate + ':00',
             episodesOfWheeze: line.Q1,
             fever: symptoms.indexOf('fever') === -1 ? '' : 'true',
             cold: symptoms.indexOf('cold') === -1 ? '' : 'true',
@@ -165,14 +227,45 @@ class QuestionnaireDataTransformer {
         };
         return record;
     }
+
+    _transformSnapRecord(line) {
+        const record = {
+            studyId: line['ID.name'],
+            siteId: line['ID.name'].substring(0, 1),
+            dateCompleted: line['ID.date'] + ' ' + line['ID.start'],
+            episodesOfWheeze: line.Q1,
+            fever: line['Q2:1'] && 'true',
+            cold: line['Q2:2'] && 'true',
+            cough: line['Q2:3'] && 'true',
+            haveOtherSymtoms: line['Q2:4'] && 'true',
+            otherSymptoms: line['Q2a'] && 'true',
+            blueInhaler: line['Q3:1'] && 'true',
+            brownInhaler: line['Q3:2'] && 'true',
+            anticholinergicInhaler: line['Q3:3'] && 'true',
+            oralCorticosteroid: line['Q3:4'] && 'true',
+            antibiotics: line['Q3:5'] && 'true',
+            none: line['Q3:7'] && 'true',
+            haveOtherTreatments: line['Q3:6'] && 'true',
+            otherTreatment: line['Q3a'],
+            parents: line['Q4:1'] && 'true',
+            communityNurse: line['Q4:2'] && 'true',
+            GP: line['Q4:3'] && 'true',
+            emergencyDepartment: line['Q4:4'] && 'true',
+            outpatients: line['Q4:5'] && 'true',
+            paediatricAssessmentUnit: line['Q4:6'] && 'true',
+            paediatricWard: line['Q4:7'] && 'true',
+            paediatricICU: line['Q4:8'] && 'true',
+            other: line['Q4:9'] && 'true',
+            otherProvider: line['Q4a'],
+            infantStridor: line['Q5:1'] && 'true',
+            adultStertor: line['Q5:2'] && 'true',
+            adultWheeze: line['Q5:3'] && 'true',
+            infantWheeze: line['Q5:4'] && 'true',
+            unsure: line['Q5:5'] && 'true',
+            antiobiotics: line.Q6
+        };
+        return record;
+    }
 }
-
-
-const inputStream = fs.createReadStream('./Survey+SMS+link_May+29,+2019_13.03.csv', { encoding: 'utf-8' });
-const inputStream2 = fs.createReadStream('./Breathing+Together+email+survey_May+29,+2019_12.56.csv', { encoding: 'utf-8'});
-const questionnaireDataTransformer = new QuestionnaireDataTransformer([inputStream, inputStream2]);
-questionnaireDataTransformer.convert().then(() => {
-    console.log('end');
-});
 
 
