@@ -1,0 +1,45 @@
+<template class="task-template">
+  <section id="menus-section" class="section js-section u-category-menu">
+    <header class="section-header">
+      <div class="section-wrapper">
+        <h1>
+          <svg class="section-icon"><use xlink:href="assets/img/icons.svg#icon-menu"></use></svg>
+          Normalise Questionnaire Data
+        </h1>
+        <h3>This process transforms and collates monthly questionnaire data from <em>Snap</em> and <em>Imperial</em> into a target format.</h3>
+
+        <div id='react-questionnaire-normalise'></div>
+
+      </div>
+    </header>
+
+    <div class="demo">
+      <div class="demo-wrapper">
+        <button id="context-menu-demo-toggle" class="js-container-target demo-toggle-button">Tutorial
+          <div class="demo-meta u-avoid-clicks">...if you are not sure what to do!</div>
+        </button>
+        <div class="demo-box">
+          <div class="demo-controls">
+            <button class="demo-button" id="context-menu">View Demo</button>
+          </div>
+          <p>When you download questionnaire data from <em>Snap</em>, you will get a file named <code>breathingtogether_x_x (x).csv</code> where <code>x</code> stands for a digit; similarly, exports from <em>Imperial</em> results in files named <code>Breathing+Together+email+survey_{{date}}.csv</code> or <code>Survey+SMS+link_{{date}}.csv</code>.</p>
+
+          <p>Drag and drop as many as these files you want onto the box above. They do not need to be from the same source as the programme automatically detects its origin.</p>
+          <p>Please note that it's optional whether you remove personal identifiable data from the files beforehand. This programme <em>does not retain</em> any data after export.</p>
+
+          <p>After all the files are dropped, click <code>Convert</code>. The programme transforms and collate the data from all the files into the formats described below (see target format).</p>
+
+          
+        <h5>Target Formats</h5>
+        
+      <h5>Headers of data files</h5>
+      </div>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      require('./renderer-process/menus/context-menu')
+    </script>
+
+  </section>
+</template>
