@@ -60,21 +60,26 @@ class QuestionnaireConvert extends React.Component {
         inputStreams.push(stream);
     }
     fs.mkdir('./tmp', { recursive: true }, _err => {
-        const outputPath = `./tmp/questionnaire_data_converted_${new Date().toISOString()}.tsv`;
+        const date = new Date().toISOString();
+        const outputPath = `./tmp/questionnaire_data_converted_${date}.tsv`;
+        const summaryOutputPath = `./tmp/questionnaire_data_summary_${date}.tsv`;
         const outputStream = fs.createWriteStream(outputPath);
-        const transformer = new QuestionnaireDataTransformer(inputStreams, outputStream);
+        const summaryOutputStream = fs.createWriteStream(summaryOutputPath);
+        const transformer = new QuestionnaireDataTransformer(inputStreams, outputStream, summaryOutputStream);
         transformer.convert().then(() => {
             _that.setState({ converting: false, downloadPath: outputPath });
             for (let each of inputStreams) {
                 each.close();
             } 
             outputStream.close();
+            summaryOutputStream.close();
         }).catch(e => {
             _that.setState({ converting: false, error: e.toString()});
             for (let each of inputStreams) {
                 each.close();
             } 
             outputStream.close();
+            summaryOutputStream.close();
         });
     })
   }
@@ -85,6 +90,10 @@ class QuestionnaireConvert extends React.Component {
 
   _onClickDownload = () => {
     shell.showItemInFolder(this.state.downloadPath);
+  }
+
+  _onClickSummary = () => {
+    shell.showItemInFolder(this.state.downloadPath.replace('converted', 'summary'));
   }
 
   render() {
@@ -105,7 +114,8 @@ class QuestionnaireConvert extends React.Component {
               (this.state.downloadPath ?
                     <div>
                         <button className="function-button" style={{ backgroundColor: 'hsl(341, 100%, 53%)'}} onClick={this._onClickConvertMore}>Convert More</button>
-                        <button className="function-button" onClick={this._onClickDownload}>Download</button>
+                        <button className="function-button" onClick={this._onClickDownload}>Download Data</button>
+                        <button className="function-button" onClick={this._onClickSummary}>Download Summary</button>
                     </div>
                   : <button className="function-button" onClick={this.state.converting ? () => {} : this._onClickConvert}>{ this.state.converting ? 'Loading' : 'Convert'}</button>
               )

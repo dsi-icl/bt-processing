@@ -14,6 +14,7 @@ function formatLine(record) {
 const record = {
     studyId: '',
     siteId: '', 
+    completed: '',
     dateCompleted: '',
     episodesOfWheeze: '',
     fever: '',
@@ -109,8 +110,8 @@ const SNAP_HEADERS = [
 ];
 
 class QuestionnaireDataTransformer {
-    constructor(inputStreams, outputStream, summaryoutputStream) { // inputStreams: ReadableStream[], outputStream: WriteableStream
-        this.summaryoutputStream = summaryoutputStream;
+    constructor(inputStreams, outputStream, analyticOutputStream) { // inputStreams: ReadableStream[], outputStream: WriteableStream
+        this.analyticOutputStream = analyticOutputStream;
         this.inputStreams = inputStreams;
         this.outputStream = outputStream;
         this.SNAP_HEADERS = SNAP_HEADERS;
@@ -124,6 +125,10 @@ class QuestionnaireDataTransformer {
             this.parseStreams.push(parse({ columns: true }));
             inputStreams[i].pipe(this.parseStreams[i]);
         }
+
+        /* analytics */
+        this.DOBS = SUBJ_DOBS;
+        this.records = []; // { DOB: number, Date_survey: number, Age_at_report: number, studyId: string, episodesOfWheeze: number, clip: string }[]
     }
 
     async convert() {
@@ -131,48 +136,75 @@ class QuestionnaireDataTransformer {
         for (let i = 0; i < this.inputStreams.length; i++) {
             await this._convertOneStream(this.parseStreams[i]);
         }
+
+        this.records.sort((a, b) => a.studyId.localeCompare(b.studyId) || b.date_survey_number - a.date_survey_number );
+        this.analyticOutputStream.write('studyId\tDOB\tdate_survey\tage_at_survey\tnum_episode_wheeze\tsound_clip\n');
+        for(let each of this.records) {
+            this.analyticOutputStream.write(`${each.studyId}\t${each.DOB}\t${each.date_survey}\t${each.age_at_survey}\t${each.num_episode_wheeze}\t${each.sound_clip}\n`);
+        }
         return true;
     }
 
     _convertOneStream(parser) {  // parser = this.inputStream[i]
         return new Promise((resolve, reject) => {
+            let lineNum = 1;
+            let SOURCE;
+
             parser.on('error', err => { console.error(err); reject(err); });
 
-            parser.on('end', () => { parser.end(); });
+            parser.on('end', () => { parser.end(); resolve(); });
 
-            parser.on('readable', () => {
-                let line;
-                line = parser.read();
+            parser.on('data', (line) => {
                 if (!line) reject('Cannot read line.');
 
                 /* check the source of the file */
-                let SOURCE;
-                const sourceIsImperial = this._checkWhichSourceRecordIsFrom(line, this.IMPERIAL_HEADERS); 
-                const sourceIsSnap = this._checkWhichSourceRecordIsFrom(line, this.SNAP_HEADERS); 
-                console.log(line, sourceIsImperial, sourceIsSnap);
-                if ((sourceIsImperial && sourceIsSnap) || (!sourceIsImperial && !sourceIsSnap)) reject('Cannot determine source.');
-                if (sourceIsImperial) SOURCE = this.AVAILABLE_SOURCES.IMPERIAL;
-                if (sourceIsSnap) SOURCE = this.AVAILABLE_SOURCES.SNAP;
+
+                if (lineNum === 1) {
+                    const sourceIsImperial = this._checkWhichSourceRecordIsFrom(line, this.IMPERIAL_HEADERS); 
+                    const sourceIsSnap = this._checkWhichSourceRecordIsFrom(line, this.SNAP_HEADERS); 
+                    if ((sourceIsImperial && sourceIsSnap) || (!sourceIsImperial && !sourceIsSnap)) reject('Cannot determine source.');
+                    if (sourceIsImperial) SOURCE = this.AVAILABLE_SOURCES.IMPERIAL;
+                    if (sourceIsSnap) SOURCE = this.AVAILABLE_SOURCES.SNAP;
+                    lineNum += 1;
+                    return;
+                }
             
                 /* getting rid of waste lines */
-                if (SOURCE === this.AVAILABLE_SOURCES.IMPERIAL) { parser.read(); }
+                if (SOURCE === this.AVAILABLE_SOURCES.IMPERIAL && lineNum === 2) { lineNum += 1;  return; }
             
                 /* starting transformation */
-                while (line = parser.read()) {
-                    switch (SOURCE) {
-                        case this.AVAILABLE_SOURCES.IMPERIAL:
-                        {
-                            this.outputStream.write(formatLine(this._transformImperialRecord(line)));
-                            break;
-                        }
-                        case this.AVAILABLE_SOURCES.SNAP:
-                        {
-                            this.outputStream.write(formatLine(this._transformSnapRecord(line)));
-                            break;
-                        }
+                let transformedLine;
+                switch (SOURCE) {
+                    case this.AVAILABLE_SOURCES.IMPERIAL:
+                    {
+                        transformedLine = this._transformImperialRecord(line);
+                        break;
+                    }
+                    case this.AVAILABLE_SOURCES.SNAP:
+                    {
+                        transformedLine = this._transformSnapRecord(line);
+                        break;
                     }
                 }
-                resolve();
+                this.outputStream.write(formatLine(transformedLine));
+
+                /* analytics */
+                const DOB = (this.DOBS[transformedLine.studyId] && moment(this.DOBS[transformedLine.studyId], 'DD/MM/YYYY')) || null ;
+                const date_survey = moment(transformedLine.dateCompleted, 'DD/MM/YYYY hh:mm:ss') || null;
+                const age_at_survey = DOB && date_survey ? date_survey.diff(DOB, 'months') : '';
+                
+                this.records.push({
+                    studyId: transformedLine.studyId,
+                    DOB: this.DOBS[transformedLine.studyId] || '',
+                    date_survey: transformedLine.dateCompleted || '',
+                    date_survey_number: (date_survey && date_survey.valueOf()) || null,
+                    age_at_survey,
+                    num_episode_wheeze: transformedLine.episodesOfWheeze,
+                    sound_clip: transformedLine.infantStridor || transformedLine.adultStertor || transformedLine.adultWheeze || transformedLine.infantWheeze
+                });
+
+
+                lineNum += 1;
             });
         });
     }
@@ -196,6 +228,7 @@ class QuestionnaireDataTransformer {
         const record = {
             studyId: line['Study ID'],
             siteId: line['Study ID'].substring(0, 1),
+            completed: line['Progress'] === '100' ? 'Yes' : 'No',
             dateCompleted: line.RecordedDate + ':00',
             episodesOfWheeze: line.Q1,
             fever: symptoms.indexOf('fever') === -1 ? '' : 'true',
@@ -221,10 +254,10 @@ class QuestionnaireDataTransformer {
             paediatricICU: '',
             other: personnale.indexOf('other') === -1 ? '' : 'true',
             otherProvider: line.Q4_9_TEXT,
-            infantStridor: soundclip === 'Sound clip 1' ? 'true' : '',
-            adultStertor: soundclip === 'Sound clip 2' ? 'true' : '',
-            adultWheeze: soundclip === 'Sound clip 3' ? 'true' : '',
-            infantWheeze: soundclip === 'Sound clip 4' ? 'true' : '',
+            infantStridor: soundclip === 'Sound clip 1' ? 'clip_1' : '',
+            adultStertor: soundclip === 'Sound clip 2' ? 'clip_2' : '',
+            adultWheeze: soundclip === 'Sound clip 3' ? 'clip_3' : '',
+            infantWheeze: soundclip === 'Sound clip 4' ? 'clip_4' : '',
             unsure: '',
             antiobiotics: line.Q6,
         };
@@ -235,6 +268,7 @@ class QuestionnaireDataTransformer {
         const record = {
             studyId: line['ID.name'],
             siteId: line['ID.name'].substring(0, 1),
+            completed: line['ID.completed'] === 'completed' ? 'Yes' : 'No',
             dateCompleted: line['ID.date'] + ' ' + line['ID.start'],
             episodesOfWheeze: line.Q1,
             fever: line['Q2:1'] && 'true',
@@ -260,10 +294,10 @@ class QuestionnaireDataTransformer {
             paediatricICU: line['Q4:8'] && 'true',
             other: line['Q4:9'] && 'true',
             otherProvider: line['Q4a'],
-            infantStridor: line['Q5:1'] && 'true',
-            adultStertor: line['Q5:2'] && 'true',
-            adultWheeze: line['Q5:3'] && 'true',
-            infantWheeze: line['Q5:4'] && 'true',
+            infantStridor: line['Q5:1'] && 'clip_1',
+            adultStertor: line['Q5:2'] && 'clip_2',
+            adultWheeze: line['Q5:3'] && 'clip_3',
+            infantWheeze: line['Q5:4'] && 'clip_4',
             unsure: line['Q5:5'] && 'true',
             antiobiotics: line.Q6
         };
