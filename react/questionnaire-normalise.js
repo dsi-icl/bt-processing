@@ -52,6 +52,9 @@ class QuestionnaireConvert extends React.Component {
   }
 
   _onClickConvert = () => {
+    if (this.state.files.length === 0){
+        this.setState({ error: 'Please select at least one data file for input. ' });
+    }
     const _that = this;
     this.setState({ converting : true });
     const inputStreams = [];
