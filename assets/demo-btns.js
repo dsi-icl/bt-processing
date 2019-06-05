@@ -18,9 +18,3 @@ Array.prototype.forEach.call(demoBtns, (btn) => {
     }
   })
 })
-
-// Default to the demo that was active the last time the app was open
-const buttonId = settings.get('activeDemoButtonId')
-if (buttonId) {
-  document.getElementById(buttonId).click()
-}
