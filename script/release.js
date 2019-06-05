@@ -5,7 +5,7 @@ const fs = require('fs')
 const path = require('path')
 const octokit = require('@octokit/rest')
 
-const token = process.env.ELECTRON_API_DEMO_GITHUB_TOKEN
+const token = process.env.BT_PROCESSING_GITHUB_TOKEN
 const version = require('../package').version
 const github = octokit({
   timeout: 30 * 1000,
@@ -13,7 +13,7 @@ const github = octokit({
 })
 
 if (!token) {
-  console.error('ELECTRON_API_DEMO_GITHUB_TOKEN environment variable not set\nSet it to a token with repo scope created from https://github.com/settings/tokens/new')
+  console.error('BT_PROCESSING_GITHUB_TOKEN environment variable not set\nSet it to a token with repo scope created from https://github.com/settings/tokens/new')
   process.exit(1)
 }
 

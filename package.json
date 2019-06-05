@@ -1,8 +1,8 @@
 {
-  "name": "electron-api-demos",
-  "productName": "Electron API Demos",
-  "version": "2.0.2",
-  "description": "Electron interactive API demos",
+  "name": "bt-processing",
+  "productName": "BT-processing",
+  "version": "1.0.0",
+  "description": "processing for breathing together",
   "main": "main.js",
   "bin": "cli.js",
   "scripts": {
@@ -22,12 +22,7 @@
     "prepack": "check-for-leaks",
     "prepush": "check-for-leaks"
   },
-  "repository": "https://github.com/electron/electron-api-demos",
-  "keywords": [
-    "Electron",
-    "API",
-    "demo"
-  ],
+  "repository": "https://github.com/dsi-icl/bt-processing",
   "author": "GitHub",
   "license": "MIT",
   "devDependencies": {
