@@ -1,0 +1,20 @@
+
+/* Custom Properties */
+
+:root {
+  --color:          hsl(0, 0%, 92%);
+  --color-subtle:   hsl(0, 0%, 74%);
+  --color-strong:   hsl(183, 81%, 58%);
+  --color-link:     hsl(0, 100%, 67%);
+
+  --color-border:   hsl(0, 0%, 19%);
+  --color-bg:       rgb(35, 35, 35);
+
+  --color-accent:   black; /* Fallback */
+}
+
+
+/* Category Colors */
+
+.u-category-menu          { --color-accent: hsl(166, 100%, 43%); --color-accent-lighter: hsl(166, 100%, 60%);}
+.u-category-communication { --color-accent: hsl(294, 100%, 50%); --color-accent-lighter: hsl(294, 100%, 67%); }
